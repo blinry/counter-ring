@@ -5,7 +5,11 @@ thickness = 2;
 width = 10;
 num_segments = 10;
 
-gap = width/10;
+// Distance between the number rings:
+gap = width/8;
+
+// Distance between parts which we want be able to rotate:
+wiggle_room = 1/20;
 
 // Width of the rim at the edges of the ring:
 rim_width = width/10;
@@ -63,13 +67,13 @@ module outer() {
 }
 
 module tension() {
-    cyl(gap/2, tension_ring_stretch_factor*(inner_diameter/2 + thickness/2), tension_ring_stretch_factor*thickness/2);
+    cyl(gap/3, tension_ring_stretch_factor*(inner_diameter/2 + thickness/2), tension_ring_stretch_factor*thickness/2);
 }
 
 module ring(flip) {
     translate([0,0,flip*(ring_width/2 + gap/2)]) {
         difference() {
-            cyl(ring_width, inner_diameter/2 + thickness/2, thickness/2);
+            cyl(ring_width, inner_diameter/2 + thickness/2 + wiggle_room, thickness/2);
             for (i = [0:num_segments-1]) {
                 angle = -i*360/num_segments;
                 rotate([0,0,angle]) {
@@ -119,5 +123,5 @@ inner();
 outer();
 
 tension();
-%ring(1);
-%ring(-1);
+#ring(1);
+#ring(-1);
