@@ -1,27 +1,27 @@
 part = 0;
 
-inner_diameter = 21;
+inner_diameter = 20;
 wall_thickness = 0.45;
 layer_height = 0.2;
 width = 10;
 num_segments = 10;
 
 // Distance between the number rings:
-gap = layer_height*6;
+gap = layer_height*9;
 
 // Distance between parts which we want be able to rotate:
 wiggle_room = 0.2;
 
 // Distance between parts we want to plug into each other, fixed:
-plug_room = 0.08;
+plug_room = 0.06;
 
 // Width of the rim at the edges of the ring:
-rim_width = width/10;
+rim_width = 0.5;
 
 // Width of a single number ring:
 ring_width = (width - 2*rim_width - gap)/2;
 
-tension_ring_stretch_factor = 1;
+tension_ring_stretch_factor = 1.01;
 
 eps = 0.02;
 $fn = 128;
@@ -35,46 +35,76 @@ module cyl(h, inner_radius, thickness) {
 
 module teeth(flip, width_to_inside, extra_size) {
     translate([0,0,flip*(width/2 - rim_width)]) {
-        for (i = [0:num_segments-1]) {
-            angle = -(i+0.5)*360/num_segments;
-            rotate([0,0,angle]) {
-                translate([0,-inner_diameter/2 - 4*wall_thickness + width_to_inside/2 - plug_room + eps,0]) {
-                    rotate([0, 45, 0]) {
-                        cube([ring_width/3 + extra_size, width_to_inside, ring_width/3 + extra_size], center=true);
+        difference() {
+            for (i = [0:num_segments-1]) {
+                angle = -(i+0.5)*360/num_segments;
+                rotate([0,0,angle]) {
+                    translate([0,-inner_diameter/2 - 4*wall_thickness + width_to_inside/2 - plug_room + eps,0]) {
+                        rotate([0, 45, 0]) {
+                            cube([ring_width/3 + extra_size, width_to_inside, ring_width/3 + extra_size], center=true);
+                        }
                     }
                 }
+            }
+            translate([0,0,flip*(ring_width/2+rim_width)]) {
+                cylinder(ring_width, r=inner_diameter*0.7, center=true);
             }
         }
     }
 }
 
 module inner() {
-    union() {
-        cyl(width, inner_diameter/2, wall_thickness);
-        translate([0,0,-width/2 + rim_width/2]) {
-            cyl(rim_width, inner_diameter/2, 4*wall_thickness + plug_room);
+    difference() {
+        union() {
+            cyl(width, inner_diameter/2, wall_thickness);
+            translate([0,0,-width/2 + rim_width/2]) {
+                cyl(rim_width, inner_diameter/2, 4*wall_thickness + plug_room);
+            }
+            teeth(-1, 3.5*wall_thickness + plug_room, 0);
         }
-        teeth(-1, 3.5*wall_thickness + plug_room, 0);
+        cutout();
+    }
+}
+
+module cutout() {
+    difference() {
+        union() {
+            cutout_single();
+            mirror([0,0,1]) {
+                cutout_single();
+            }
+        }
+        cylinder(h=width*6/8, r=inner_diameter*0.7, center=true);
+    }
+}
+
+module cutout_single() {
+    translate([0, -inner_diameter/2, width/2]) {
+        rotate([0,45,0]) {
+            size = inner_diameter/2*0.4;
+            cube([size,10,size], center=true);
+        }
     }
 }
 
 module outer() {
     difference() {
         union() {
-            translate([0,0,rim_width/2]) {
-                cyl(width - rim_width, inner_diameter/2 + wall_thickness + plug_room, wall_thickness);
+            translate([0,0,rim_width/2 + layer_height/2]) {
+                cyl(width - rim_width - layer_height, inner_diameter/2 + wall_thickness + plug_room, wall_thickness);
             }
             translate([0,0,width/2 - rim_width/2]) {
                 cyl(rim_width, inner_diameter/2 + wall_thickness + plug_room, 3*wall_thickness);
             }
             teeth(1, 2.5*wall_thickness, 0);
         }
-        teeth(-1, 3*wall_thickness, plug_room);
+        teeth(-1, 3*wall_thickness + eps, plug_room + layer_height);
+        cutout();
     }
 }
 
 module tension() {
-    cyl(3*layer_height, tension_ring_stretch_factor*(inner_diameter/2 + 2*wall_thickness + plug_room + wiggle_room), 2*wall_thickness);
+    cyl(2*layer_height, tension_ring_stretch_factor*(inner_diameter/2 + 2*wall_thickness + 1*plug_room), 2.5*wall_thickness);
 }
 
 module ring(flip) {
@@ -87,7 +117,7 @@ module ring(flip) {
                     translate([0,-inner_diameter/2 - 4.8*wall_thickness - plug_room - wiggle_room + wall_thickness,0]) {
                         rotate([90,90,0]) {
                             linear_extrude(2*wall_thickness) {
-                                text(str(i), font="Helvetica:style=Bold", size=ring_width*1.2, halign="center", valign="center");
+                                text(str(i), font="Helvetica", size=ring_width*1.1, halign="center", valign="center");
                             }
                         }
                     }
