@@ -1,13 +1,28 @@
+// Which part should be displayed? 0 = all, 1 to 5 are the five parts.
+// The Makefile uses this variable to automate .stl export.
 part = 0;
 
+// THESE VARIABLES ARE PROBABLY FINE TO MODIFY:
+
+// Inner diameter in mm:
 inner_diameter = 20;
-wall_thickness = 0.45;
-layer_height = 0.2;
+
+// Width of the whole ring in mm:
 width = 10;
+
+// Number of segments per ring:
 num_segments = 10;
 
-// Distance between the number rings:
-gap = layer_height*9;
+// THESE VARIABLES MIGHT DEPEND ON THE PRINTER, modify with caution:
+
+// Extrusion width in mm in PrusaSlicer:
+wall_thickness = 0.45;
+
+// Layer height in PrusaSlicer:
+layer_height = 0.2;
+
+// THESE ARE INTERNAL VARIABLES, you can try to modify them when your
+// tolerances don't work:
 
 // Distance between parts which we want be able to rotate:
 wiggle_room = 0.2;
@@ -15,17 +30,26 @@ wiggle_room = 0.2;
 // Distance between parts we want to plug into each other, fixed:
 plug_room = 0.06;
 
+// Distance between the number rings:
+gap = layer_height*9;
+
 // Width of the rim at the edges of the ring:
 rim_width = 0.5;
 
 // Width of a single number ring:
 ring_width = (width - 2*rim_width - gap)/2;
 
+// How much bigger do we want to make the tension ring, to account for
+// it being slightly bent?
 tension_ring_stretch_factor = 1.01;
 
+// A "small number":
 eps = 0.02;
+
+// How many corners does a circle have?
 $fn = 128;
 
+// A hollow cylinder.
 module cyl(h, inner_radius, thickness) {
     difference() {
         cylinder(h=h,r=inner_radius + thickness,center=true);
@@ -33,6 +57,7 @@ module cyl(h, inner_radius, thickness) {
     }
 }
 
+// The teeth on the outer and inner ring.
 module teeth(flip, width_to_inside, extra_size) {
     translate([0,0,flip*(width/2 - rim_width)]) {
         difference() {
@@ -53,6 +78,7 @@ module teeth(flip, width_to_inside, extra_size) {
     }
 }
 
+// The inner part of the base ring.
 module inner() {
     difference() {
         union() {
@@ -66,6 +92,7 @@ module inner() {
     }
 }
 
+// The outer cutout in the base rings.
 module cutout() {
     difference() {
         union() {
@@ -78,6 +105,7 @@ module cutout() {
     }
 }
 
+// Helper function for cutout().
 module cutout_single() {
     translate([0, -inner_diameter/2, width/2]) {
         rotate([0,45,0]) {
@@ -87,6 +115,7 @@ module cutout_single() {
     }
 }
 
+// The outer part of the base ring.
 module outer() {
     difference() {
         union() {
@@ -103,10 +132,12 @@ module outer() {
     }
 }
 
+// The thin tension ring.
 module tension() {
     cyl(2*layer_height, tension_ring_stretch_factor*(inner_diameter/2 + 2*wall_thickness + 1*plug_room), 2.5*wall_thickness);
 }
 
+// A number ring. Flip can be 1 or -1.
 module ring(flip) {
     translate([0,0,flip*(ring_width/2 + gap/2)]) {
         difference() {
@@ -138,23 +169,6 @@ module ring(flip) {
         }
     }
 }
-
-/*module mushroom(width) {
-    rotate([180,0,0]) {
-        union() {
-            cylinder(h=1,r1=1,r2=width);
-
-            translate([0,0,0]) {
-                cylinder(h=6, r=0.2);
-            }
-        }
-    }
-}
-
-mushroom(3);
-translate([0,8,0]){
-    mushroom(6);
-}*/
 
 if (part == 0 || part == 1)
     inner();
